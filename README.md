@@ -16,6 +16,89 @@ A comprehensive logging utility for project that provides:
 - **Flexible Configuration**: Configurable output destination (terminal and/or file)
 - **Consistent API**: Familiar logging methods (debug, info, warning, error, critical)
 
+## Installation
+
+To use standalone, use as a fork.
+
+To get updates, use as a submodule.
+
+### As standalone
+
+Go to inside your project.
+
+Clone the Repository:
+
+```bash
+git clone https://github.com/custom_logging custom_logging
+```
+
+### As submodule to existing repo
+
+Go to where you want to dependency.
+
+Clone the Repository as submodule:
+
+`custom_logging` must be maintained since Python import statements don't work
+work hyphens.
+
+```bash
+git submodule add https://github.com/custom_logging custom_logging
+```
+
+### Cloning your project that contains submodules
+
+Clone the Repository With Submodules:
+
+```bash
+git clone --recursive https://github.com/my-project-with-submodules
+```
+
+Remember `--recursive` for submodules.
+
+### If you clone without --recursive
+
+This project uses the `service_common` submodule which needs to be initialized:
+
+`service_common` must be maintained since Python import statements don't work
+work hyphens.
+
+```bash
+git submodule update --init --recursive
+```
+
+### Create and Activate Virtual Environment
+
+```bash
+# Create virtual environment.
+python3 -m venv env
+
+# Activate virtual environment.
+# On macOS/Linux:
+source env/bin/activate
+
+# On Windows:
+# venv\Scripts\activate
+```
+
+#### Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+#### Environment Configuration
+
+Create a `.env` file in the project root with the required environment
+variables. The following variables are used by the application:
+
+#### Running the Application
+
+#### Basic Usage
+
+```bash
+python3 main.py
+```
+
 ## Usage Examples
 
 ### Basic Usage (No Authentication)
@@ -23,7 +106,7 @@ A comprehensive logging utility for project that provides:
 For utility functions, background tasks, or non-authenticated endpoints:
 
 ```python
-from faxion_common.logger.enhanced_logger import get_logger
+from service_common.logger.enhanced_logger import get_logger
 
 # Create a logger instance
 logger = get_logger(name="module.name")
