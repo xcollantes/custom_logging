@@ -26,7 +26,7 @@ To get updates, use as a submodule.
 
 Go to inside your project.
 
-Clone the Repository:
+Clone the repository:
 
 ```bash
 git clone https://github.com/custom_logging custom_logging
@@ -36,7 +36,7 @@ git clone https://github.com/custom_logging custom_logging
 
 Go to where you want to dependency.
 
-Clone the Repository as submodule:
+Clone the repository as submodule:
 
 `custom_logging` must be maintained since Python import statements don't work
 work hyphens.
@@ -47,7 +47,7 @@ git submodule add https://github.com/custom_logging custom_logging
 
 ### Cloning your project that contains submodules
 
-Clone the repository With submodules:
+Clone the repository with submodules:
 
 ```bash
 git clone --recursive https://github.com/my-project-with-submodules
