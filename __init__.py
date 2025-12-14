@@ -10,4 +10,5 @@ from .enhanced_logger import (
     get_logger,
 )
 
+__version__ = "2025.12.13"
 __all__ = ["ColoredFormatter", "Colors", "EnhancedLogger", "get_logger"]

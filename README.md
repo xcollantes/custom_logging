@@ -1,4 +1,4 @@
-# Enhanced Logger LogIO
+# Enhanced Logger Loggio
 
 A comprehensive logging utility for project that provides:
 
@@ -25,13 +25,13 @@ A comprehensive logging utility for project that provides:
 ### From PyPI (Recommended)
 
 ```bash
-pip install custom-logging
+pip install loggio
 ```
 
 Then import in your code:
 
 ```python
-from custom_logging import get_logger
+from loggio import get_logger
 ```
 
 ### From Source
@@ -47,7 +47,7 @@ Go to inside your project.
 Clone the repository:
 
 ```bash
-git clone https://github.com/custom_logging custom_logging
+git clone https://github.com/xcollantes/loggio loggio
 ```
 
 #### As submodule to existing repo
@@ -56,11 +56,11 @@ Go to where you want to dependency.
 
 Clone the repository as submodule:
 
-`custom_logging` must be maintained since Python import statements don't work
+`loggio` must be maintained since Python import statements don't work
 work hyphens.
 
 ```bash
-git submodule add https://github.com/custom_logging custom_logging
+git submodule add https://github.com/xcollantes/loggio loggio
 ```
 
 #### Cloning your project that contains submodules
@@ -68,7 +68,7 @@ git submodule add https://github.com/custom_logging custom_logging
 Clone the repository with submodules:
 
 ```bash
-git clone --recursive https://github.com/my-project-with-submodules
+git clone --recursive https://github.com/xcollantes/my-project-with-submodules
 ```
 
 Remember `--recursive` for submodules.
@@ -119,7 +119,7 @@ python3 main.py
 For utility functions, background tasks, or non-authenticated endpoints:
 
 ```python
-from custom_logging import get_logger
+from loggio import get_logger
 
 # Create a logger instance.
 logger = get_logger(name="module.name")
@@ -141,7 +141,7 @@ INFO:2023-05-01 14:30:45:example.py:24:This is an info message.
 The logger supports Python's standard string formatting:
 
 ```python
-from custom_logging import get_logger
+from loggio import get_logger
 
 logger = get_logger(name="module.formatter")
 
@@ -162,7 +162,7 @@ INFO:2023-05-01 14:31:22:formatter.py:15:Processing item A123 with priority 2
 When you have authentication info:
 
 ```python
-from custom_logging import get_logger
+from loggio import get_logger
 
 # Create a logger instance.
 logger = get_logger(name="module.auth")
