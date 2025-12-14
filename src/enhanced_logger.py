@@ -2,7 +2,9 @@
 
 import json
 import logging
-from typing import Any, ClassVar, Dict, Optional, Tuple
+from datetime import datetime
+from typing import Any, ClassVar, Dict, Optional, Tuple, Set
+from zoneinfo import ZoneInfo, available_timezones
 
 
 # ANSI color codes for colored terminal output
@@ -49,7 +51,9 @@ class ColoredFormatter(logging.Formatter):
         logging.CRITICAL: f"{Colors.BG_RED}{Colors.WHITE}{Colors.BOLD}",
     }
 
-    def __init__(self, fmt=None, datefmt=None, style="%", use_colors=True):
+    def __init__(
+        self, fmt=None, datefmt=None, style="%", use_colors=True, timezone=None
+    ):
         """Initialize the ColoredFormatter.
 
         Args:
@@ -57,9 +61,66 @@ class ColoredFormatter(logging.Formatter):
             datefmt: Format string for the date/time.
             style: Style of the format string (%, {, or $).
             use_colors: Whether to use colors in log messages.
+            timezone: Timezone to use for timestamps. Can be a ZoneInfo object or string like 'UTC', 'US/Pacific'.
         """
         super().__init__(fmt, datefmt, style)
         self.use_colors = use_colors
+        self.timezone = timezone
+
+    def converter(self, timestamp):
+        """Convert timestamp to the specified timezone.
+
+        Args:
+            timestamp: Unix timestamp.
+
+        Returns:
+            time.struct_time in the specified timezone.
+        """
+        if self.timezone:
+            if isinstance(self.timezone, str):
+                tz = ZoneInfo(self.timezone)
+            else:
+                tz = self.timezone
+            dt = datetime.fromtimestamp(timestamp, tz=tz)
+            return dt.timetuple()
+        return super().converter(timestamp)
+
+    def formatTime(self, record, datefmt=None):
+        """Format the time with timezone support.
+
+        Args:
+            record: Log record.
+            datefmt: Date format string.
+
+        Returns:
+            Formatted time string with timezone info.
+
+        Raises:
+            ZoneInfoNotFoundError: If the timezone string is not a valid IANA timezone.
+        """
+        if self.timezone:
+            try:
+                if isinstance(self.timezone, str):
+                    tz = ZoneInfo(self.timezone)
+                else:
+                    tz = self.timezone
+                dt = datetime.fromtimestamp(record.created, tz=tz)
+                if datefmt:
+                    return dt.strftime(datefmt)
+                else:
+                    return dt.isoformat()
+            except Exception as e:
+                # If timezone is invalid, fall back to default and log warning
+                import sys
+                print(
+                    f"WARNING: Invalid timezone '{self.timezone}': {e}. "
+                    f"Falling back to local time. Use get_available_timezones() "
+                    f"to see valid IANA timezone identifiers.",
+                    file=sys.stderr
+                )
+                self.timezone = None
+                return super().formatTime(record, datefmt)
+        return super().formatTime(record, datefmt)
 
     def format(self, record):
         """Format the log record with appropriate colors.
@@ -134,6 +195,17 @@ class EnhancedLogger:
         # With truncation explicitly set to False for long messages
         logger.info("Very long message that should not be truncated", truncate=False)
 
+        # With custom timezone
+        logger = get_logger(timezone="UTC")
+        logger.info("Log in UTC timezone")
+
+        # With different timezones
+        logger = get_logger(timezone="US/Pacific")
+        logger.info("Log in Pacific time")
+
+        logger = get_logger(timezone="Europe/London")
+        logger.info("Log in London time")
+
         # In FastAPI endpoints with dependency injection
         @app.get("/endpoint")
         async def endpoint(logger: EnhancedLogger = Depends(get_authenticated_logger)):
@@ -142,7 +214,7 @@ class EnhancedLogger:
         ```
 
     Features:
-    - Includes timestamp in logs
+    - Includes timestamp in logs with timezone support
     - Includes user ID if authenticated
     - Shows file name and line number of the log call
     - Can be used both with and without authentication context
@@ -151,6 +223,7 @@ class EnhancedLogger:
     - Automatic truncation of long messages with option to disable
     - Colored terminal output for better readability
     - Singleton implementation to ensure only one logger instance exists
+    - Configurable timezone for timestamps (UTC, US/Pacific, Europe/London, etc.)
     """
 
     # Class variable to store the singleton instance
@@ -174,6 +247,7 @@ class EnhancedLogger:
         truncate_length: int = 5000,
         truncate: bool = True,
         use_colors: bool = True,
+        timezone: str = None,
     ) -> None:
         """Initialize enhanced logging mechanism.
 
@@ -187,6 +261,8 @@ class EnhancedLogger:
                 Default is 5000.
             truncate: Whether to enable automatic truncation. Default is True.
             use_colors: Whether to use colors in terminal output. Default is True.
+            timezone: Timezone to display timestamps in. Can be a string like 'UTC',
+                'US/Pacific', 'Europe/London', etc. Default is None (local time).
         """
         # Skip initialization if already initialized.
         if self._initialized:
@@ -200,6 +276,7 @@ class EnhancedLogger:
         self.truncate_length = truncate_length
         self.truncate = truncate
         self.use_colors = use_colors
+        self.timezone = timezone
 
         self.logger = logging.getLogger(self.name)
         self.logger.propagate = False  # Deduplicate default logging.
@@ -208,7 +285,7 @@ class EnhancedLogger:
         # Format includes timestamp, level, filename, line number, and message
         # User ID will be included in the message when available.
         base_format = "%(levelname)s:[%(asctime)s]%(filename)s:%(lineno)d:%(message)s"
-        date_format = "%Y-%m-%d %H:%M:%S"
+        date_format = "%Y-%m-%d %H:%M:%S %Z%z"
 
         # Clear existing handlers to avoid duplicates.
         if self.logger.handlers:
@@ -216,7 +293,12 @@ class EnhancedLogger:
 
         if self.fileout_path:
             # Regular formatter for file output (no colors)
-            file_formatter = logging.Formatter(base_format, datefmt=date_format)
+            file_formatter = ColoredFormatter(
+                fmt=base_format,
+                datefmt=date_format,
+                use_colors=False,
+                timezone=self.timezone,
+            )
             file_handler = logging.FileHandler(self.fileout_path, "a")
             file_handler.setFormatter(file_formatter)
             self.logger.addHandler(file_handler)
@@ -224,7 +306,10 @@ class EnhancedLogger:
         if self.terminal:
             # Colored formatter for terminal output
             terminal_formatter = ColoredFormatter(
-                fmt=base_format, datefmt=date_format, use_colors=self.use_colors
+                fmt=base_format,
+                datefmt=date_format,
+                use_colors=self.use_colors,
+                timezone=self.timezone,
             )
             terminal_handler = logging.StreamHandler()
             terminal_handler.setFormatter(terminal_formatter)
@@ -243,6 +328,7 @@ class EnhancedLogger:
         truncate_length: int = None,
         truncate: bool = None,
         use_colors: bool = None,
+        timezone: str = None,
     ) -> None:
         """Reconfigure the logger instance.
 
@@ -255,6 +341,8 @@ class EnhancedLogger:
             truncate_length: Maximum length for log messages before truncation.
             truncate: Whether to enable automatic truncation. Default is None (unchanged).
             use_colors: Whether to use colors in terminal output. Default is None (unchanged).
+            timezone: Timezone to display timestamps in. Can be a string like 'UTC',
+                'US/Pacific', 'Europe/London', etc. Default is None (unchanged).
         """
         # Update only specified parameters
         if name is not None:
@@ -274,10 +362,12 @@ class EnhancedLogger:
             self.truncate = truncate
         if use_colors is not None:
             self.use_colors = use_colors
+        if timezone is not None:
+            self.timezone = timezone
 
         # Reconfigure handlers
         base_format = "%(levelname)s:[%(asctime)s]%(filename)s:%(lineno)d:%(message)s"
-        date_format = "%Y-%m-%d %H:%M:%S"
+        date_format = "%Y-%m-%d %H:%M:%S %Z%z"
 
         # Clear existing handlers to avoid duplicates
         if self.logger.handlers:
@@ -285,7 +375,9 @@ class EnhancedLogger:
 
         if self.fileout_path:
             # Regular formatter for file output (no colors)
-            file_formatter = logging.Formatter(base_format, datefmt=date_format)
+            file_formatter = ColoredFormatter(
+                fmt=base_format, datefmt=date_format, use_colors=False, timezone=self.timezone
+            )
             file_handler = logging.FileHandler(self.fileout_path, "a")
             file_handler.setFormatter(file_formatter)
             self.logger.addHandler(file_handler)
@@ -293,7 +385,7 @@ class EnhancedLogger:
         if self.terminal:
             # Colored formatter for terminal output
             terminal_formatter = ColoredFormatter(
-                fmt=base_format, datefmt=date_format, use_colors=self.use_colors
+                fmt=base_format, datefmt=date_format, use_colors=self.use_colors, timezone=self.timezone
             )
             terminal_handler = logging.StreamHandler()
             terminal_handler.setFormatter(terminal_formatter)
@@ -550,6 +642,7 @@ def get_logger(
     truncate: bool = True,
     fileout_path: str = None,
     use_colors: bool = True,
+    timezone: str = None,
 ) -> EnhancedLogger:
     """Get or create the singleton EnhancedLogger instance.
 
@@ -567,6 +660,10 @@ def get_logger(
         truncate: Whether to enable automatic truncation. Default is True.
         use_colors: Whether to use colors in terminal output. Default is True.
         fileout_path: Path to output logs. Default is None.
+        timezone: Timezone to display timestamps in. Can be a string like 'UTC',
+            'US/Pacific', 'Europe/London', etc. Default is None (local time).
+            Examples: 'UTC', 'US/Pacific', 'US/Eastern', 'Europe/London',
+            'Asia/Tokyo', 'Australia/Sydney'.
     Returns:
         The singleton EnhancedLogger instance.
     """
@@ -583,6 +680,7 @@ def get_logger(
             truncate=truncate,
             use_colors=use_colors,
             fileout_path=fileout_path,
+            timezone=timezone,
         )
     else:
         # Subsequent calls: reconfigure if parameters are provided
@@ -595,6 +693,53 @@ def get_logger(
             truncate=truncate,
             use_colors=use_colors,
             fileout_path=fileout_path,
+            timezone=timezone,
         )
 
     return _logger_instance
+
+
+def get_available_timezones() -> Set[str]:
+    """Get all available IANA timezone identifiers.
+
+    Returns:
+        A set of all available IANA timezone strings that can be used with the
+        timezone parameter.
+
+    Example:
+        ```python
+        from loggio import get_available_timezones
+
+        # Get all available timezones
+        timezones = get_available_timezones()
+        print(f"Total timezones: {len(timezones)}")
+
+        # Check if a timezone is available
+        if "America/New_York" in timezones:
+            logger = get_logger(timezone="America/New_York")
+        ```
+    """
+    return available_timezones()
+
+
+def is_valid_timezone(timezone_str: str) -> bool:
+    """Check if a timezone string is valid IANA timezone identifier.
+
+    Args:
+        timezone_str: The timezone string to validate.
+
+    Returns:
+        True if the timezone is valid, False otherwise.
+
+    Example:
+        ```python
+        from loggio import is_valid_timezone
+
+        if is_valid_timezone("America/New_York"):
+            logger = get_logger(timezone="America/New_York")
+        else:
+            print("Invalid timezone")
+        ```
+    """
+    return timezone_str in available_timezones()
+
