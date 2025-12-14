@@ -1,4 +1,4 @@
-# Enhanced Logger
+# Enhanced Logger LogIO
 
 A comprehensive logging utility for project that provides:
 
@@ -10,11 +10,15 @@ A comprehensive logging utility for project that provides:
 
 ## Features
 
-- **Contextual Information**: Every log includes timestamp, log level, file name, and line number
+- **Contextual Information**: Every log includes timestamp, log level, file
+  name, and line number
 - **Authentication Awareness**: Can include user ID in logs when available
-- **Format String Support**: Supports Python's standard string formatting with %s, %d, etc.
-- **Flexible Configuration**: Configurable output destination (terminal and/or file)
-- **Consistent API**: Familiar logging methods (debug, info, warning, error, critical)
+- **Format String Support**: Supports Python's standard string formatting with
+  %s, %d, etc.
+- **Flexible Configuration**: Configurable output destination (terminal and/or
+  file)
+- **Consistent API**: Familiar logging methods (debug, info, warning, error,
+  critical)
 
 ## Installation
 
@@ -200,11 +204,14 @@ except Exception as e:
 
 When creating a logger instance, you can configure:
 
-- `name`: Logger name for filtering and organization (e.g., "api.auth", "service.processor")
-- `level`: Minimum log level (DEBUG, INFO, WARNING, ERROR, CRITICAL) - defaults to "INFO"
+- `name`: Logger name for filtering and organization (e.g., "api.auth",
+  "service.processor")
+- `level`: Minimum log level (DEBUG, INFO, WARNING, ERROR, CRITICAL) - defaults
+  to "INFO"
 - `fileout`: Whether to write logs to a file (default: False)
 - `terminal`: Whether to output logs to the terminal/console (default: True)
-- `fileout_path`: Path for log file if `fileout` is True (default: "logs/app.log")
+- `fileout_path`: Path for log file if `fileout` is True (default:
+  "logs/app.log")
 
 Example with custom configuration:
 
@@ -234,17 +241,22 @@ INFO:2023-05-01 14:35:22:auth_routes.py:28:user123: Processing protected resourc
 
 ## Best Practices
 
-1. Use a hierarchical naming scheme for loggers (e.g., `api.auth`, `service.processor`)
+1. Use a hierarchical naming scheme for loggers (e.g., `api.auth`,
+   `service.processor`)
 2. Include meaningful context in log messages
 3. Use the appropriate log level for different scenarios:
    - DEBUG: Detailed information for debugging
    - INFO: Confirmation that things are working as expected
    - WARNING: Something unexpected happened, but the application can continue
    - ERROR: A more serious problem that prevented a function from working
-   - CRITICAL: A very serious error that might prevent the program from continuing
+   - CRITICAL: A very serious error that might prevent the program from
+     continuing
 4. Include user context when available for better traceability
 5. Include error details when logging exceptions
 
 ## Implementation Details
 
-The Enhanced Logger builds on Python's built-in logging module with custom formatting and context handling. It uses `stacklevel=2` to ensure the correct file and line number are recorded in the logs rather than showing the logger implementation file itself.
+The Enhanced Logger builds on Python's built-in logging module with custom
+formatting and context handling. It uses `stacklevel=2` to ensure the correct
+file and line number are recorded in the logs rather than showing the logger
+implementation file itself.
