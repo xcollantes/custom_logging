@@ -12,7 +12,9 @@ from .enhanced_logger import (
     is_valid_timezone,
 )
 
-__version__ = "2025.12.13"
+# Set automatically from git tag during Github UI Release creation.
+__version__ = "0.0.0.dev"
+
 __all__ = [
     "ColoredFormatter",
     "Colors",
