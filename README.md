@@ -18,11 +18,25 @@ A comprehensive logging utility for project that provides:
 
 ## Installation
 
+### From PyPI (Recommended)
+
+```bash
+pip install custom-logging
+```
+
+Then import in your code:
+
+```python
+from custom_logging import get_logger
+```
+
+### From Source
+
 To use standalone, use as a fork.
 
 To get updates, use as a submodule.
 
-### As standalone
+#### As standalone
 
 Go to inside your project.
 
@@ -32,7 +46,7 @@ Clone the repository:
 git clone https://github.com/custom_logging custom_logging
 ```
 
-### As submodule to existing repo
+#### As submodule to existing repo
 
 Go to where you want to dependency.
 
@@ -45,7 +59,7 @@ work hyphens.
 git submodule add https://github.com/custom_logging custom_logging
 ```
 
-### Cloning your project that contains submodules
+#### Cloning your project that contains submodules
 
 Clone the repository with submodules:
 
@@ -61,7 +75,7 @@ If you clone without --recursive:
 git submodule update --init --recursive
 ```
 
-### Create and Activate Virtual Environment
+#### Create and Activate Virtual Environment
 
 ```bash
 # Create virtual environment.
@@ -101,9 +115,9 @@ python3 main.py
 For utility functions, background tasks, or non-authenticated endpoints:
 
 ```python
-from service_common.logger.enhanced_logger import get_logger
+from custom_logging import get_logger
 
-# Create a logger instance
+# Create a logger instance.
 logger = get_logger(name="module.name")
 
 # Log messages with different levels
@@ -123,7 +137,7 @@ INFO:2023-05-01 14:30:45:example.py:24:This is an info message.
 The logger supports Python's standard string formatting:
 
 ```python
-from faxion_common.logger.enhanced_logger import get_logger
+from custom_logging import get_logger
 
 logger = get_logger(name="module.formatter")
 
@@ -144,9 +158,9 @@ INFO:2023-05-01 14:31:22:formatter.py:15:Processing item A123 with priority 2
 When you have authentication info:
 
 ```python
-from faxion_common.logger.enhanced_logger import get_logger
+from custom_logging import get_logger
 
-# Create a logger instance
+# Create a logger instance.
 logger = get_logger(name="module.auth")
 
 # Get user info from somewhere (e.g., decoded token)
