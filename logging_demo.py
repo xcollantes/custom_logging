@@ -8,12 +8,12 @@ logging: EnhancedLogger = get_logger(name="logging_test")
 logging.info("Hello, world!")
 
 # How truncating messages works.
-long_message = "Hello, world!" * 100
+long_message = "The path of the righteous man is beset on all sides by the inequities of the selfish and the tyranny of evil men."
 logging.info("Show truncated message: %s", long_message)
 logging.info(
     "Show truncated message with length specified: %s",
     long_message,
-    truncate_length=50,
+    truncate_length=100,
 )
 logging.info(
     "Show full message with no truncation: %s",
