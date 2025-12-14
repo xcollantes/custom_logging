@@ -12,6 +12,8 @@ A comprehensive logging utility for project that provides:
 
 - **Contextual Information**: Every log includes timestamp, log level, file
   name, and line number
+- **Timezone Support**: Configure timestamps to display in any timezone (UTC,
+  US/Pacific, Europe/London, etc.)
 - **Authentication Awareness**: Can include user ID in logs when available
 - **Format String Support**: Supports Python's standard string formatting with
   %s, %d, etc.
@@ -19,6 +21,7 @@ A comprehensive logging utility for project that provides:
   file)
 - **Consistent API**: Familiar logging methods (debug, info, warning, error,
   critical)
+- **Colored Output**: Color-coded log levels for better readability in terminal
 
 ## Installation
 
@@ -132,7 +135,7 @@ logger.warning("This is a warning message.")
 
 Output example:
 
-```
+```text
 INFO:2023-05-01 14:30:45:example.py:24:This is an info message.
 ```
 
@@ -153,7 +156,7 @@ logger.info("Processing item %s with priority %d", item_id, priority)
 
 Output example:
 
-```
+```text
 INFO:2023-05-01 14:31:22:formatter.py:15:Processing item A123 with priority 2
 ```
 
@@ -176,7 +179,7 @@ logger.info("User performed an action.", user_context=user_info)
 
 Output example:
 
-```
+```text
 INFO:2023-05-01 14:32:10:auth_service.py:45:user123: User performed an action.
 ```
 
@@ -208,10 +211,15 @@ When creating a logger instance, you can configure:
   "service.processor")
 - `level`: Minimum log level (DEBUG, INFO, WARNING, ERROR, CRITICAL) - defaults
   to "INFO"
-- `fileout`: Whether to write logs to a file (default: False)
+- `fileout_path`: Path for log file. Set to `None` to disable file logging
+  (default: "logs/app.log")
 - `terminal`: Whether to output logs to the terminal/console (default: True)
-- `fileout_path`: Path for log file if `fileout` is True (default:
-  "logs/app.log")
+- `timezone`: Timezone for timestamps (e.g., "UTC", "US/Pacific", "Europe/London").
+  Defaults to None (local time)
+- `use_colors`: Whether to use colored output in terminal (default: True)
+- `truncate`: Whether to truncate long messages (default: True)
+- `truncate_length`: Maximum message length before truncation (default: 10000)
+- `json_format`: Whether to format arguments as JSON (default: False)
 
 Example with custom configuration:
 
@@ -219,9 +227,9 @@ Example with custom configuration:
 logger = get_logger(
     name="batch.processor",
     level="DEBUG",
-    fileout=True,
     fileout_path="logs/batch_processor.log",
-    terminal=True
+    terminal=True,
+    timezone="UTC"
 )
 ```
 
@@ -229,15 +237,130 @@ logger = get_logger(
 
 The logger produces logs in the following format:
 
-```
-LEVEL:TIMESTAMP:FILENAME:LINE_NUMBER:MESSAGE
+```text
+LEVEL:[TIMESTAMP]FILENAME:LINE_NUMBER:MESSAGE
 ```
 
-For example:
+Timestamps include timezone information with both timezone name and UTC offset:
 
+```text
+INFO:[2025-12-14 00:20:03 PST-0800]demo.py:42:This is a log message
+INFO:[2025-12-14 08:20:03 UTC+0000]demo.py:42:Same message in UTC
+INFO:[2025-12-14 17:20:03 JST+0900]demo.py:42:Same message in Tokyo time
 ```
-INFO:2023-05-01 14:35:22:auth_routes.py:28:user123: Processing protected resource request
+
+With user context:
+
+```text
+INFO:[2025-12-14 14:35:22 UTC+0000]auth_routes.py:28:user123: Processing
+protected resource request
 ```
+
+## Timezone Configuration
+
+### Using Timezones
+
+By default, logs use your local system timezone. You can configure any IANA
+timezone identifier:
+
+```python
+from loggio import get_logger
+
+# Use UTC
+logger = get_logger(timezone="UTC")
+logger.info("This log is in UTC")
+
+# Use US Pacific time
+logger = get_logger(timezone="US/Pacific")
+logger.info("This log is in Pacific time")
+
+# Use Tokyo time
+logger = get_logger(timezone="Asia/Tokyo")
+logger.info("This log is in Tokyo time")
+```
+
+### Validating Timezones
+
+The logger uses Python's `zoneinfo` module with the IANA timezone database.
+You can validate timezone strings before using them:
+
+```python
+from loggio import get_logger, is_valid_timezone, get_available_timezones
+
+# Check if a timezone is valid
+if is_valid_timezone("America/New_York"):
+    logger = get_logger(timezone="America/New_York")
+    logger.info("Using valid timezone")
+
+# Get all available timezones (598 total)
+timezones = get_available_timezones()
+print(f"Total timezones: {len(timezones)}")
+
+# Find timezones for a region
+europe_tzs = [tz for tz in timezones if tz.startswith("Europe")]
+print(f"European timezones: {europe_tzs[:5]}")
+```
+
+### Changing Timezone Dynamically
+
+Since the logger is a singleton, reconfiguring it will update the timezone for
+all subsequent logs:
+
+```python
+# Start with UTC
+logger = get_logger(timezone="UTC")
+logger.info("Log in UTC")
+
+# Switch to Pacific time
+logger = get_logger(timezone="US/Pacific")
+logger.info("Now logging in Pacific time")
+```
+
+### Common Timezones
+
+**IANA Timezone Format:**
+
+All timezone identifiers follow the IANA timezone database format:
+`Region/City` (e.g., `America/New_York`, `Europe/London`)
+
+**Americas:**
+
+- `America/New_York` (EST/EDT)
+- `America/Chicago` (CST/CDT)
+- `America/Denver` (MST/MDT)
+- `America/Los_Angeles` (PST/PDT)
+- `US/Pacific`, `US/Eastern`, `US/Central`, `US/Mountain` (POSIX-style)
+
+**Europe:**
+
+- `Europe/London` (GMT/BST)
+- `Europe/Paris` (CET/CEST)
+- `Europe/Berlin` (CET/CEST)
+- `Europe/Moscow` (MSK)
+
+**Asia:**
+
+- `Asia/Tokyo` (JST)
+- `Asia/Shanghai` (CST)
+- `Asia/Hong_Kong` (HKT)
+- `Asia/Singapore` (SGT)
+
+**Pacific:**
+
+- `Australia/Sydney` (AEDT/AEST)
+- `Pacific/Auckland` (NZDT/NZST)
+
+**Special:**
+
+- `UTC` - Coordinated Universal Time
+
+**Note:** Abbreviations like "PST" or "EST" are NOT valid IANA identifiers.
+Use `America/Los_Angeles` or `US/Pacific` instead of "PST", and
+`America/New_York` or `US/Eastern` instead of "EST".
+
+For a complete list of 598+ available timezones, use
+`get_available_timezones()` or see the
+[IANA timezone database](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones).
 
 ## Best Practices
 
@@ -253,10 +376,18 @@ INFO:2023-05-01 14:35:22:auth_routes.py:28:user123: Processing protected resourc
      continuing
 4. Include user context when available for better traceability
 5. Include error details when logging exceptions
+6. Consider using UTC timezone for production systems to avoid confusion across
+   different timezones
 
 ## Implementation Details
 
 The Enhanced Logger builds on Python's built-in logging module with custom
-formatting and context handling. It uses `stacklevel=2` to ensure the correct
-file and line number are recorded in the logs rather than showing the logger
-implementation file itself.
+formatting and context handling. It uses:
+
+- `stacklevel=2` to ensure the correct file and line number are recorded in
+  the logs rather than showing the logger implementation file itself
+- Python's `zoneinfo` module (Python 3.9+) for timezone support, providing
+  access to the IANA timezone database
+- ANSI color codes for terminal output with automatic color removal for file
+  logging
+- Singleton pattern to ensure consistent configuration across the application

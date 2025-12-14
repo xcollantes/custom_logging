@@ -1,6 +1,11 @@
 """Demo the enhanced logger."""
 
-from src.enhanced_logger import EnhancedLogger, get_logger
+from src.enhanced_logger import (
+    EnhancedLogger,
+    get_available_timezones,
+    get_logger,
+    is_valid_timezone,
+)
 
 logging: EnhancedLogger = get_logger(name="logging_test")
 
@@ -8,12 +13,12 @@ logging: EnhancedLogger = get_logger(name="logging_test")
 logging.info("Hello, world!")
 
 # How truncating messages works.
-long_message = "Hello, world!" * 100
+long_message = "The path of the righteous man is beset on all sides by the inequities of the selfish and the tyranny of evil men."
 logging.info("Show truncated message: %s", long_message)
 logging.info(
     "Show truncated message with length specified: %s",
     long_message,
-    truncate_length=50,
+    truncate_length=100,
 )
 logging.info(
     "Show full message with no truncation: %s",
@@ -40,3 +45,32 @@ logging.info("See UID on the left.", user_context={"uid": "1234567890"})
 logging.truncate = True
 logging.truncate_length = 5
 logging.info("Hello, world!")
+
+# How timezone works.
+# Reset truncate for clearer output.
+logging.truncate_length = 10000
+
+# Get all available IANA timezones.
+timezones = get_available_timezones()
+logging.info("Total IANA timezones available: %d", len(timezones))
+
+# Validate a timezone before using it.
+tz_to_check = "America/New_York"
+if is_valid_timezone(tz_to_check):
+    logging.info("Timezone %s is valid.", tz_to_check)
+
+# Invalid timezone abbreviations.
+if not is_valid_timezone("PST"):
+    logging.warning("PST is not valid. Use America/Los_Angeles instead.")
+
+# Change timezone to UTC.
+logging = get_logger(timezone="UTC")
+logging.info("This message is logged in UTC timezone.")
+
+# Change timezone to Tokyo.
+logging = get_logger(timezone="Asia/Tokyo")
+logging.info("This message is logged in Tokyo timezone.")
+
+# Change timezone to New York.
+logging = get_logger(timezone="America/New_York")
+logging.info("This message is logged in New York timezone.")
